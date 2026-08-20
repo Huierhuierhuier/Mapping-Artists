@@ -340,8 +340,8 @@
 
                 // Agenturen 1914 (korrigiert: max 4 Agenturen pro Stadt)
                 content += '<div class="legend-section">Künstler-Agenturen (1914)</div>';
-                var agGrades = [1, 2];
-                var agLabels = ['1', '2–4'];
+                var agGrades = [1, 2, 3, 4];
+                var agLabels = ['1', '2', '3', '4'];
 
                 for (var j = 0; j < agGrades.length; j++) {
                     content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
@@ -360,8 +360,8 @@
 
                 // Agenturen 1910 (mit Klasse bis 5 für Berlin)
                 content += '<div class="legend-section">Künstler-Agenturen (1910)</div>';
-                var agGrades = [1, 2, 5];
-                var agLabels = ['1', '2–3', '5 (Berlin)'];
+                var agGrades = [1, 2, 3, 4, 5];
+                var agLabels = ['1', '2', '3', '4', '5'];
 
                 for (var j = 0; j < agGrades.length; j++) {
                     content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
