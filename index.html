@@ -176,12 +176,12 @@
 
         // Dynamische Farbskala für Agenturen (Blautöne)
         function getAgencyColor(count) {
-               return count >= 5 ? '#08306b' : // Sehr dunkelblau (≥ 5)
-           count >= 4 ? '#08519c' : // Dunkelblau (4)
-           count >= 3 ? '#2171b5' : // Mittelblau (3)
-           count >= 2 ? '#4292c6' : // Hellblau (2)
-           count >= 1 ? '#6baed6' : // Sehr hellblau (1)
-                        '#eff3ff';  // Standard/Fallback für 0 oder kleiner
+                  return count >= 5 ? '#030519' : // Extrem dunkles Marineblau (≥ 5)
+               count >= 4 ? '#08306b' : // Tiefes Dunkelblau (4)
+               count >= 3 ? '#1d6996' : // Kräftiges Mittelblau (3)
+               count >= 2 ? '#38a6a5' : // Strahlendes Cyan-Blau (2)
+               count >= 1 ? '#9ecae1' : // Sehr helles Eisblau (1)
+                            '#f7fbff';  // Fast weißer Fallback (0 oder kleiner)
         }
 
         function getRadius(count) {
