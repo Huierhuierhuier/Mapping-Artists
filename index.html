@@ -198,13 +198,16 @@
         });
 
         // 5. Farblegende unten rechts
+       // 5. Farblegende unten rechts
         var legend = L.control({ position: 'bottomright' });
         legend.onAdd = function () {
             var div = L.DomUtil.create('div', 'info legend');
             div.innerHTML = '<strong>Anzahl Artist:innen</strong><br>';
             var grades = [1, 2, 3, 6, 11, 21];
-            var labels = ['1', '2', '3–5', '6–10', '11–20', '21+'];
-
+            
+            // Hier ist '27' (die Maximalzahl) explizit im Text enthalten:
+            var labels = ['1', '2', '3–5', '6–10', '11–20', '21–27'];
+        
             for (var i = 0; i < grades.length; i++) {
                 div.innerHTML +=
                     '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' +
