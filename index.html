@@ -123,6 +123,50 @@
     <div id="map"></div>
 
     <script>
+        // Mapping für Stadt-Namen
+        const cityNormalizeMap = {
+            "Moskwa": "Moskau",
+            "Москва": "Moskau",
+            "Warschau": "Warschau",
+            "Варшава": "Warschau",
+            "Wilna": "Wilna",
+            "Вильна": "Wilna",
+            "Kiew": "Kiew",
+            "Киев": "Kiew",
+            "Lodz": "Łódź",
+            "Лодзь": "Łódź",
+            "Lomza": "Łomża",
+            "Ломжа": "Łomża",
+            "Nocherkassk'": "Nowotscherkassk",
+            "Новочеркасск": "Nowotscherkassk",
+            "Odessa": "Odessa",
+            "Одесса": "Odessa",
+            "Rostov nad Donom": "Rostow am Don",
+            "Ростов-на-Дону": "Rostow am Don",
+            "Samara": "Samara",
+            "Самара": "Samara",
+            "St. Petersburg": "Sankt Petersburg",
+            "Санкт-Петербург": "Sankt Petersburg",
+            "Saratov'": "Saratow",
+            "Саратов": "Saratow",
+            "Slonym (Gub. Grodno)": "Slonim",
+            "Слоним": "Slonim",
+            "Tashkent": "Taschkent",
+            "Ташкент": "Taschkent",
+            "Charkow": "Charkiw",
+            "Харьков": "Charkiw",
+            "Iurev (Tartu)": "Tartu (Jurjew)",
+            "Юрьев": "Tartu (Jurjew)",
+            "Astrachan": "Astrachan",
+            "Астрахань": "Astrachan"
+        };
+
+        function getStandardCityName(rawName) {
+            if (!rawName) return "";
+            var cleanName = rawName.trim();
+            return cityNormalizeMap[cleanName] || cleanName;
+        }
+
         // 1. Karte initialisieren
         var map = L.map('map').setView([52.0, 25.0], 5);
 
@@ -175,7 +219,7 @@
         var mapTitle = L.control({ position: 'topleft' });
         mapTitle.onAdd = function() {
             var div = L.DomUtil.create('div', 'info title-box');
-            div.innerHTML = '<h1>Aufenthaltsorte der im "Organ" geführten Artist:innen</h1><p id="subtitle">Dezember 1910</p>';
+            div.innerHTML = '<h1>Aufenthaltsorte der im "Organ" geführten Artist:innen</h1><p id="subtitle">Nr. 23, 1. Dezember 1910</p>';
             return div;
         };
         mapTitle.addTo(map);
@@ -194,7 +238,7 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     results.data.forEach(function(row) {
-                        var cityName = row.city;
+                        var cityName = getStandardCityName(row.city);
                         var count = parseInt(row.count, 10);
                         var lat = parseFloat(row.lat);
                         var lng = parseFloat(row.lng);
@@ -220,7 +264,7 @@
                             } else if (cityName === "Sosnowiec") {
                                 labelDirection = 'bottom';
                                 labelOffset = [0, 6];
-                            } else if (cityName === "Kutno") {
+                            } else if (cityName === "Łomża") {
                                 labelDirection = 'left';
                                 labelOffset = [-6, 0];
                             }
@@ -247,7 +291,7 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     results.data.forEach(function(row) {
-                        var cityName = row.city;
+                        var cityName = getStandardCityName(row.city);
                         var count = parseInt(row.count, 10);
                         var lat = parseFloat(row.lat);
                         var lng = parseFloat(row.lng);
@@ -306,13 +350,13 @@
         legend.addTo(map);
 
         // Funktion zum Befüllen der Legende + Fußnote
-        function updateLegendAndFootnote(yearName) {
+        function updateLegendAndFootnote(selectedKey) {
             var legendDiv = document.getElementById('dynamic-legend');
             if (!legendDiv) return;
 
             var content = '';
 
-            if (yearName === "Januar 1914") {
+            if (selectedKey === "Januar 1914") {
                 content += '<div class="legend-section">Artist:innen (1914)</div>';
                 var grades = [1, 2, 3, 4, 6, 15, 27];
                 var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '27+'];
@@ -321,13 +365,24 @@
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
 
-                // Agenturen 1914
+                // Agenturen 1914 (korrigierte Skala)
                 content += '<div class="legend-section">Künstler-Agenturen (1914)</div>';
                 var agGrades = [1, 2, 5];
-                var agLabels = ['1', '2–3', '5+'];
+                var agLabels = ['1', '2–4', '5+'];
 
                 for (var j = 0; j < agGrades.length; j++) {
                     content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
+                }
+
+                content += '<div class="footnote-box">1914 waren die Artist:innen im Organ<br>überwiegend in kyrillischer Schrift aufgeführt.</div>';
+            } else {
+                // Artist:innen 1910
+                content += '<div class="legend-section">Artist:innen (Dez. 1910)</div>';
+                var grades = [1, 2, 3, 4, 6, 27];
+                var labels = ['1', '2', '3', '4–5', '6–7', '27+'];
+
+                for (var i = 0; i < grades.length; i++) {
+                    content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
 
                 // Agenturen 1910
@@ -347,21 +402,22 @@
         updateLegendAndFootnote("Dezember 1910");
 
         // Synchronisation bei Ebenenwechsel
-        function handleLayerChange(layerName) {
+        function handleLayerChange(layerKey) {
             var subtitle = document.getElementById('subtitle');
-            if (subtitle) {
-                subtitle.innerText = layerName;
-            }
-
-            if (layerName === "Dezember 1910") {
+            
+            if (layerKey === "Dezember 1910") {
+                if (subtitle) subtitle.innerText = "Nr. 23, 1. Dezember 1910";
+                
                 if (map.hasLayer(layerAgenturen1914)) map.removeLayer(layerAgenturen1914);
                 if (!map.hasLayer(layerAgenturen1910)) map.addLayer(layerAgenturen1910);
-            } else if (layerName === "Januar 1914") {
+            } else if (layerKey === "Januar 1914") {
+                if (subtitle) subtitle.innerText = "Nr. 104, 11. Januar 1914";
+                
                 if (map.hasLayer(layerAgenturen1910)) map.removeLayer(layerAgenturen1910);
                 if (!map.hasLayer(layerAgenturen1914)) map.addLayer(layerAgenturen1914);
             }
 
-            updateLegendAndFootnote(layerName);
+            updateLegendAndFootnote(layerKey);
         }
 
         map.on('baselayerchange', function(e) {
