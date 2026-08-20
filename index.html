@@ -232,7 +232,7 @@
         // Standardmäßig 1910 anzeigen
         layer1910.addTo(map);
 
-        // Umschalter oben rechts
+      // Umschalter oben rechts
         var overlayMaps = {
             "Dezember 1910": layer1910,
             "Januar 1914": layer1914
@@ -256,14 +256,16 @@
             var content = '<strong>Anzahl Artist:innen</strong><br>';
 
             if (yearName === "Januar 1914") {
+                // Konkrete Abstufung für 1914
                 var grades = [1, 2, 3, 4, 6, 15, 27];
                 var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '27'];
 
                 for (var i = 0; i < grades.length; i++) {
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
-                content += '<div class="footnote-box">1914 waren die Artist:innen im Organ überwiegend in kyrillischer Schrift aufgeführt.</div>';
+                content += '<div class="footnote-box">1914 waren die Artist:innen im Organ<br>überwiegend in kyrillischer Schrift aufgeführt.</div>';
             } else {
+                // Abstufung für 1910
                 var grades = [1, 2, 3, 4, 6, 27];
                 var labels = ['1', '2', '3', '4–5', '6–7', '27'];
 
@@ -275,16 +277,21 @@
             legendDiv.innerHTML = content;
         }
 
-        // Inital Legende für 1910 laden
+        // Zu Beginn Legende für 1910 laden
         updateLegendAndFootnote("Dezember 1910");
 
-        // Event: Synchronisiere Untertitel & Legende beim Umschalten
-        map.on('baselayerchange', function(e) {
+        // Funktion zum Synchronisieren bei JEDER Änderung der Ebenen
+        function handleLayerChange(layerName) {
             var subtitle = document.getElementById('subtitle');
             if (subtitle) {
-                subtitle.innerText = e.name;
+                subtitle.innerText = layerName;
             }
-            updateLegendAndFootnote(e.name);
+            updateLegendAndFootnote(layerName);
+        }
+
+        // Fängt sowohl 'baselayerchange' als auch 'overlayadd' ab
+        map.on('baselayerchange overlayadd', function(e) {
+            handleLayerChange(e.name);
         });
     </script>
 </body>
