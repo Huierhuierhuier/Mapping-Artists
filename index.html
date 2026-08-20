@@ -9,56 +9,83 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
-    <!-- PapaParse to parse organ-1910-2 -->
+    <!-- PapaParse -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
-        .city-label {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-weight: bold;
-    font-size: 11px;
-    color: #222;
-    text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff; /* Weisse Kontur fuer bessere Lesbarkeit */
-        }
-        CSS
-        
-        .title-box {
-        background: rgba(255, 255, 255, 0.9);
-        padding: 8px 12px;
-        border-radius: 5px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.2);
-        }
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         #map {
             width: 100vw;
             height: 100vh;
             background-color: #d4dedd;
         }
-        .info.legend {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            line-height: 18px;
-            font-size: 12px;
-            color: #333;
-            font-family: sans-serif;
+
+        /* Elegante Überschrift oben links */
+        .title-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            border: 1px solid #ccc;
+            max-width: 320px;
         }
-        .legend-circle {
-            border-radius: 50%;
+        .title-box h1 {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+        .title-box p {
+            margin: 0;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Städtenamen ohne weiße Rahmen/Hintergründe */
+        .city-label {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-weight: 600;
+            font-size: 11px;
+            color: #111;
+            text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff;
+        }
+
+        /* ENTFERNT DIE WEISSEN PFEILE AN DEN LABELS */
+        .leaflet-tooltip-pane .leaflet-tooltip::before {
+            display: none !important;
+        }
+
+        /* Legende */
+        .info.legend {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 14px;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            line-height: 20px;
+            font-size: 11px;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
             display: inline-block;
-            background: rgba(255, 87, 34, 0.65);
-            border: 1px solid #d84315;
-            margin-right: 6px;
+            margin-right: 8px;
+            border-radius: 50%;
             vertical-align: middle;
+            border: 1px solid rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -67,49 +94,56 @@
     <div id="map"></div>
 
     <script>
-        // 1. Initialize Map
+        // 1. Karte initialisieren
         var map = L.map('map').setView([52.0, 25.0], 5);
 
-        // 2. Base map with NO labels
+        // 2. Basiskarte ohne Beschriftung
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap &copy; CARTO'
         }).addTo(map);
 
-        // 3. Load 1910 GeoJSON borders (if present)
+        // 3. GeoJSON 1910 laden
         fetch('./Weltkarte_1910.geojson')
-            .then(function(res) {
-                if (!res.ok) throw new Error("GeoJSON not found");
-                return res.json();
+            .then(res => res.ok ? res.json() : null)
+            .then(geojsonData => {
+                if (geojsonData) {
+                    L.geoJSON(geojsonData, {
+                        style: {
+                            color: "#777",
+                            weight: 1,
+                            fillColor: "#bbb",
+                            fillOpacity: 0.25
+                        }
+                    }).addTo(map);
+                }
             })
-            .then(function(geojsonData) {
-                L.geoJSON(geojsonData, {
-                    style: {
-                        color: "#777",
-                        weight: 1,
-                        fillColor: "#bbb",
-                        fillOpacity: 0.25
-                    }
-                }).addTo(map);
-            })
-            .catch(function(err) {
-                console.log("GeoJSON Notice:", err);
-            });
+            .catch(err => console.log("GeoJSON Notice:", err));
+
+        // Dynamische Farbcodierung je nach Anzahl
+        function getColor(count) {
+            return count > 20 ? '#800026' :
+                   count > 10 ? '#bd0026' :
+                   count > 5  ? '#e31a1c' :
+                   count > 2  ? '#fc4e2a' :
+                   count > 1  ? '#fd8d3c' :
+                                '#feb24c';
+        }
 
         function getRadius(count) {
             return Math.max(5, Math.sqrt(count) * 3.5);
         }
-        
-        // Titel-Box oben links
+
+        // Titel oben links
         var mapTitle = L.control({ position: 'topleft' });
         mapTitle.onAdd = function() {
             var div = L.DomUtil.create('div', 'info title-box');
-            div.innerHTML = '<h3 style="margin:0; font-size: 14px; font-weight: bold; font-family: sans-serif;">Aufenthaltsorte der im "Organ" geführten Artist:innen, Dezember 1910</h3>';
+            div.innerHTML = '<h1>Aufenthaltsorte der im "Organ" geführten Artist:innen</h1><p>Stand: Dezember 1910</p>';
             return div;
         };
         mapTitle.addTo(map);
-        
-        // 4. Fetch and parse organ-1910-2
+
+        // 4. CSV Laden und verarbeiten
         Papa.parse('./organ-1910-2', {
             download: true,
             header: true,
@@ -122,46 +156,63 @@
                     var lng = parseFloat(row.lng);
 
                     if (!isNaN(lat) && !isNaN(lng)) {
+                        var markerColor = getColor(count);
+
                         var circle = L.circleMarker([lat, lng], {
                             radius: getRadius(count),
-                            fillColor: "#ff5722",
-                            color: "#d84315",
-                            weight: 1.5,
-                            opacity: 0.9,
-                            fillOpacity: 0.65
+                            fillColor: markerColor,
+                            color: "#000",
+                            weight: 0.8,
+                            opacity: 0.8,
+                            fillOpacity: 0.8
                         });
 
-                        circle.bindPopup("<b>" + cityName + "</b><br>Anzahl: " + count);
+                        circle.bindPopup("<b>" + cityName + "</b><br>Anzahl Artist:innen: " + count);
                         circle.addTo(map);
-                         // Städtename direkt neben dem Punkt anzeigen
-                    circle.bindTooltip(cityName, {
-                        permanent: true,
-                        direction: 'right',
-                        className: 'city-label',
-                        offset: [5, 0]
-                    });
+
+                        // Sonderbehandlung für überlagernde Städte (Będzin / Sosnowiec)
+                        var labelDirection = 'right';
+                        var labelOffset = [6, 0];
+
+                        if (cityName === "Będzin") {
+                            labelDirection = 'top';
+                            labelOffset = [0, -6];
+                        } else if (cityName === "Sosnowiec") {
+                            labelDirection = 'bottom';
+                            labelOffset = [0, 6];
+                        } else if (cityName === "Kutno") {
+                            labelDirection = 'left';
+                            labelOffset = [-6, 0];
+                        }
+
+                        // Label ohne Pfeil anhängen
+                        circle.bindTooltip(cityName, {
+                            permanent: true,
+                            direction: labelDirection,
+                            className: 'city-label',
+                            offset: labelOffset
+                        });
                     }
-                   
                 });
-            },
-            error: function(err) {
-                console.error("CSV loading error:", err);
             }
         });
 
-        // 5. Legend
+        // 5. Farblegende unten rechts
         var legend = L.control({ position: 'bottomright' });
         legend.onAdd = function () {
             var div = L.DomUtil.create('div', 'info legend');
-            div.innerHTML = '<strong>Anzahl</strong><br>';
-            [1, 5, 10, 27].forEach(function(count) {
-                var size = getRadius(count) * 2;
-                div.innerHTML += '<div style="margin-top:4px;"><span class="legend-circle" style="width:' + size + 'px; height:' + size + 'px;"></span>' + count + '</div>';
-            });
+            div.innerHTML = '<strong>Anzahl Artist:innen</strong><br>';
+            var grades = [1, 2, 3, 6, 11, 21];
+            var labels = ['1', '2', '3–5', '6–10', '11–20', '21+'];
+
+            for (var i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                    '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' +
+                    labels[i] + '<br>';
+            }
             return div;
         };
         legend.addTo(map);
     </script>
-
 </body>
 </html>
