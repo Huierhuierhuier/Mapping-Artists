@@ -99,7 +99,6 @@
             margin-top: 0;
         }
 
-        /* Fußnote in der Legende */
         /* Fußnote in der Legende (mit schmalerem Umbruch) */
         .footnote-box {
             margin-top: 8px;
@@ -109,7 +108,7 @@
             border-top: 1px solid #ddd;
             padding-top: 6px;
             line-height: 1.35;
-            max-width: 170px; /* Erzwingt den kompakten Zeilenumbruch */
+            max-width: 170px;
             word-wrap: break-word;
         }
 
@@ -152,21 +151,22 @@
             })
             .catch(err => console.log("GeoJSON Notice:", err));
 
-        // Dynamische Farbcodierung für beide Jahre
+        // Dynamische Farbcodierung für Artist:innen
         function getColor(count) {
-            return count >= 27 ? '#800026' :  // Dunkelrot
-                   count >= 15 ? '#bd0026' :  // Rot-Violett
-                   count >= 6  ? '#e31a1c' :  // Rot
-                   count >= 4  ? '#fc4e2a' :  // Orange-Rot
-                   count == 3  ? '#fd8d3c' :  // Orange
-                   count == 2  ? '#feb24c' :  // Hellorange
-                                 '#ffdda1';   // Gelb (1)
+            return count >= 27 ? '#800026' :
+                   count >= 15 ? '#bd0026' :
+                   count >= 6  ? '#e31a1c' :
+                   count >= 4  ? '#fc4e2a' :
+                   count == 3  ? '#fd8d3c' :
+                   count == 2  ? '#feb24c' :
+                                 '#ffdda1';
         }
+
         // Dynamische Farbskala für Agenturen (Blautöne)
         function getAgencyColor(count) {
-            return count >= 5 ? '#08306b' :  // Dunkelblau (Berlin)
-                   count >= 2 ? '#2171b5' :  // Mittelblau (2-3 Agenturen)
-                                '#6baed6';   // Hellblau (1 Agentur)
+            return count >= 5 ? '#08306b' :
+                   count >= 2 ? '#2171b5' :
+                                '#6baed6';
         }
 
         function getRadius(count) {
@@ -182,67 +182,36 @@
         };
         mapTitle.addTo(map);
 
-        // Layer-Gruppen für die beiden Jahre
-       // Layer-Gruppen
+        // Layer-Gruppen
         var layer1910 = L.layerGroup();
         var layer1914 = L.layerGroup();
-        var layerAgenturen = L.layerGroup(); // <-- NEW: Layer für Agenturen
-        
-        // CSV-Ladefunktion für Artist:innen
-        loadCsvLayer('./organ-1910-2', layer1910);
-        loadCsvLayer('./organ-1914', layer1914);
-        
-        // <-- NEW: Agenturen CSV laden
-        Papa.parse('./Organ-ag-1910-2', {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                results.data.forEach(function(row) {
-                    var cityName = row.city;
-                    var count = parseInt(row.count, 10);
-                    var lat = parseFloat(row.lat);
-                    var lng = parseFloat(row.lng);
-        
-                    if (!isNaN(lat) && !isNaN(lng)) {
-                        var circle = L.circleMarker([lat, lng], {
-                            radius: getRadius(count),
-                            fillColor: getAgencyColor(count),
-                            color: "#051e42",
-                            weight: 1,
-                            opacity: 0.9,
-                            fillOpacity: 0.8
-                        });
-        
-                        circle.bindPopup("<b>" + cityName + "</b><br>Künstler-Agenturen: " + count);
-        
-                        circle.bindTooltip(cityName, {
-                            permanent: true,
-                            direction: 'right',
-                            className: 'city-label',
-                            offset: [6, 0]
-                        });
-        
-                        circle.addTo(layerAgenturen);
-                    }
-                });
-            }
-        });
-        
-        // Standardmäßig 1910 + Agenturen anzeigen
-        layer1910.addTo(map);
-        layerAgenturen.addTo(map);
-        
-        // Umschalter oben rechts anpassen
-        var overlayMaps = {
-            "Dezember 1910": layer1910,
-            "Januar 1914": layer1914
-        };
-        L.control.layers(overlayMaps, null, { collapsed: false, position: 'topright' }).addTo(map);
+        var layerAgenturen = L.layerGroup();
+
+        // Generische Funktion zum Laden von Artist:innen CSVs
+        function loadCsvLayer(url, targetLayer) {
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    results.data.forEach(function(row) {
+                        var cityName = row.city;
+                        var count = parseInt(row.count, 10);
+                        var lat = parseFloat(row.lat);
+                        var lng = parseFloat(row.lng);
+
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            var circle = L.circleMarker([lat, lng], {
+                                radius: getRadius(count),
+                                fillColor: getColor(count),
+                                color: "#800026",
+                                weight: 1,
+                                opacity: 0.9,
+                                fillOpacity: 0.8
+                            });
 
                             circle.bindPopup("<b>" + cityName + "</b><br>Anzahl Artist:innen: " + count);
 
-                            // Ausrichtung überlagernder Labels
                             var labelDirection = 'right';
                             var labelOffset = [6, 0];
 
@@ -271,21 +240,59 @@
             });
         }
 
-        // CSV-Dateien laden
+        // Artist:innen CSV-Dateien laden
         loadCsvLayer('./organ-1910-2', layer1910);
         loadCsvLayer('./organ-1914-1.csv', layer1914);
 
-        // Standardmäßig 1910 anzeigen
-        layer1910.addTo(map);
+        // Agenturen CSV laden
+        Papa.parse('./Organ-ag-1910-2', {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                results.data.forEach(function(row) {
+                    var cityName = row.city;
+                    var count = parseInt(row.count, 10);
+                    var lat = parseFloat(row.lat);
+                    var lng = parseFloat(row.lng);
 
-      // Umschalter oben rechts
-        var overlayMaps = {
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        var circle = L.circleMarker([lat, lng], {
+                            radius: getRadius(count),
+                            fillColor: getAgencyColor(count),
+                            color: "#051e42",
+                            weight: 1,
+                            opacity: 0.9,
+                            fillOpacity: 0.8
+                        });
+
+                        circle.bindPopup("<b>" + cityName + "</b><br>Künstler-Agenturen: " + count);
+
+                        circle.bindTooltip(cityName, {
+                            permanent: true,
+                            direction: 'right',
+                            className: 'city-label',
+                            offset: [6, 0]
+                        });
+
+                        circle.addTo(layerAgenturen);
+                    }
+                });
+            }
+        });
+
+        // Standardmäßig 1910 und Agenturen anzeigen
+        layer1910.addTo(map);
+        layerAgenturen.addTo(map);
+
+        // Umschalter oben rechts
+        var baseMaps = {
             "Dezember 1910": layer1910,
             "Januar 1914": layer1914
         };
-        L.control.layers(overlayMaps, null, { collapsed: false, position: 'topright' }).addTo(map);
+        L.control.layers(baseMaps, null, { collapsed: false, position: 'topright' }).addTo(map);
 
-        // EINZIGE Legende unten rechts anlegen
+        // Legende unten rechts anlegen
         var legend = L.control({ position: 'bottomright' });
         legend.onAdd = function () {
             var div = L.DomUtil.create('div', 'info legend');
@@ -295,58 +302,69 @@
         legend.addTo(map);
 
         // Funktion zum Befüllen der Legende + Fußnote
-       function updateLegendAndFootnote(yearName) {
-    var legendDiv = document.getElementById('dynamic-legend');
-    if (!legendDiv) return;
+        function updateLegendAndFootnote(yearName) {
+            var legendDiv = document.getElementById('dynamic-legend');
+            if (!legendDiv) return;
 
-    var content = '';
+            var content = '';
 
-    if (yearName === "Januar 1914") {
-        content += '<div class="legend-section">Artist:innen (1914)</div>';
-        var grades = [1, 2, 3, 4, 6, 15, 27];
-        var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '27+'];
+            if (yearName === "Januar 1914") {
+                content += '<div class="legend-section">Artist:innen (1914)</div>';
+                var grades = [1, 2, 3, 4, 6, 15, 27];
+                var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '27+'];
 
-        for (var i = 0; i < grades.length; i++) {
-            content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
+                for (var i = 0; i < grades.length; i++) {
+                    content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
+                }
+                content += '<div class="footnote-box">1914 waren die Artist:innen im Organ<br>überwiegend in kyrillischer Schrift aufgeführt.</div>';
+            } else {
+                // Artist:innen 1910
+                content += '<div class="legend-section">Artist:innen (Dez. 1910)</div>';
+                var grades = [1, 2, 3, 4, 6, 27];
+                var labels = ['1', '2', '3', '4–5', '6–7', '27+'];
+
+                for (var i = 0; i < grades.length; i++) {
+                    content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
+                }
+
+                // Agenturen 1910 (Blautöne)
+                content += '<div class="legend-section">Künstler-Agenturen</div>';
+                var agGrades = [1, 2, 5];
+                var agLabels = ['1', '2–3', '5 (Berlin)'];
+
+                for (var j = 0; j < agGrades.length; j++) {
+                    content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
+                }
+            }
+
+            legendDiv.innerHTML = content;
         }
-        content += '<div class="footnote-box">1914 waren die Artist:innen im Organ<br>überwiegend in kyrillischer Schrift aufgeführt.</div>';
-    } else {
-        // Artist:innen 1910
-        content += '<div class="legend-section">Artist:innen (Dez. 1910)</div>';
-        var grades = [1, 2, 3, 4, 6, 27];
-        var labels = ['1', '2', '3', '4–5', '6–7', '27+'];
-
-        for (var i = 0; i < grades.length; i++) {
-            content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
-        }
-
-        // Agenturen 1910 (Blautöne)
-        content += '<div class="legend-section">Künstler-Agenturen</div>';
-        var agGrades = [1, 2, 5];
-        var agLabels = ['1', '2–3', '5 (Berlin)'];
-
-        for (var j = 0; j < agGrades.length; j++) {
-            content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
-        }
-    }
-
-    legendDiv.innerHTML = content;
-}
 
         // Zu Beginn Legende für 1910 laden
         updateLegendAndFootnote("Dezember 1910");
 
-        // Funktion zum Synchronisieren bei JEDER Änderung der Ebenen
+        // Synchronisation bei Ebenenwechsel
         function handleLayerChange(layerName) {
             var subtitle = document.getElementById('subtitle');
             if (subtitle) {
                 subtitle.innerText = layerName;
             }
+
+            // Agenturen-Layer nur bei 1910 anzeigen
+            if (layerName === "Dezember 1910") {
+                if (!map.hasLayer(layerAgenturen)) {
+                    map.addLayer(layerAgenturen);
+                }
+            } else {
+                if (map.hasLayer(layerAgenturen)) {
+                    map.removeLayer(layerAgenturen);
+                }
+            }
+
             updateLegendAndFootnote(layerName);
         }
 
-        // Fängt sowohl 'baselayerchange' als auch 'overlayadd' ab
-        map.on('baselayerchange overlayadd', function(e) {
+        map.on('baselayerchange', function(e) {
             handleLayerChange(e.name);
         });
     </script>
