@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historische Karte mit Städten</title>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+            background: #2b2b2b;
+        }
+        /* Styling für Legende */
+        .info.legend {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 14px;
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            line-height: 20px;
+            color: #333;
+            font-size: 13px;
+        }
+        .legend-circle {
+            border-radius: 50%;
+            display: inline-block;
+            background: rgba(255, 87, 34, 0.6);
+            border: 1.5px solid #d84315;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script>
+        // 1. Karte initialisieren
+        const map = L.map('map').setView([52.0, 25.0], 5);
+
+        // 2. Freie Basiskarte laden (CartoDB Positron / Hell)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // 3. Deine GeoJSON-Datei für die Hintergrundgrenzen laden
+        // Passe 'Weltkarte_1910_klein.geojson' an den exakten Dateinamen deiner GeoJSON-Datei auf GitHub an!
+        fetch('Weltkarte_1910.geojson')
+            .then(response => {
+                if (!response.ok) throw new Error("GeoJSON Datei nicht gefunden");
+                return response.json();
+            })
+            .then(geojsonData => {
+                L.geoJSON(geojsonData, {
+                    style: {
+                        color: "#555555",
+                        weight: 1,
+                        opacity: 0.7,
+                        fillColor: "#cccccc",
+                        fillOpacity: 0.3
+                    },
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties && (feature.properties.NAME || feature.properties.name)) {
+                            layer.bindPopup("<b>" + (feature.properties.NAME || feature.properties.name) + "</b>");
+                        }
+                    }
+                }).addTo(map);
+            })
+            .catch(error => console.log('Hinweis zur GeoJSON:', error));
+
+        // 4. Städte-Daten aus deiner Tabelle
+        const cities = [
+            ["Warszawa", 27, 52.237, 21.0175],
+            ["Moskwa", 7, 55.7558, 37.6173],
+            ["Petersburg", 7, 59.9375, 30.3086],
+            ["Łódź", 7, 51.7592, 19.456],
+            ["Odessa", 6, 46.4775, 30.7326],
+            ["Ekaterynodar", 5, 45.0328, 38.9768],
+            ["Lwów", 4, 49.8429, 24.0311],
+            ["Tyflis (Tbilisi)", 4, 41.7151, 44.8271],
+            ["Białystok", 3, 53.1167, 23.1667],
+            ["Ekaterynosław", 3, 48.4647, 35.0462],
+            ["Wilno (Vilnius)", 3, 54.6872, 25.2797],
+            ["Baku", 2, 40.3777, 49.892],
+            ["Rostow nad Donem", 2, 47.2221, 39.7158],
+            ["Ryga", 2, 56.9496, 24.1052],
+            ["Sosnowiec", 2, 50.2795, 19.129],
+            ["Armawir", 1, 45.0075, 41.1177],
+            ["Będzin", 1, 50.3251, 19.1297],
+            ["Bruxelles", 1, 50.8503, 4.3517],
+            ["Budapest", 1, 47.4979, 19.0402],
+            ["Carycyn (Volgograd)", 1, 48.708, 44.518],
+            ["Charków", 1, 49.9803, 36.2532],
+            ["Christiania (Oslo)", 1, 59.9139, 10.7522],
+            ["Dorpat (Tartu)", 1, 58.3782, 26.7295],
+            ["Galatz (Galați)", 1, 45.4333, 28.05],
+            ["Georgiewsk", 1, 44.15, 43.4667],
+            ["Hamburg", 1, 53.5511, 9.9937],
+            ["Kokand", 1, 40.5321, 70.9514],
+            ["Kursk", 1, 51.7373, 36.1743],
+            ["Kutno", 1, 52.2373, 19.1344],
+            ["Mińsk", 1, 53.9, 27.5667],
+            ["Piotrków", 1, 51.4167, 19.6833],
+            ["Rewel (Tallinn)", 1, 59.437, 24.7536],
+            ["Rome", 1, 41.9028, 12.4964],
+            ["Stavropol", 1, 45.0448, 41.972],
+            ["Tiumeń", 1, 57.1522, 65.5272],
+            ["Witebsk", 1, 55.19, 30.2]
+        ];
+
+        // Funktion zur dynamischen Kreisgrößenberechnung
+        function getRadius(count) {
+            return Math.max(5, Math.sqrt(count) * 3.5);
+        }
+
+        // 5. Punkte als proportionale Kreise zeichnen
+        cities.forEach(item => {
+            const name = item[0];
+            const count = item[1];
+            const lat = item[2];
+            const lng = item[3];
+
+            const circle = L.circleMarker([lat, lng], {
+                radius: getRadius(count),
+                fillColor: "#ff5722",
+                color: "#d84315",
+                weight: 1.5,
+                opacity: 0.9,
+                fillOpacity: 0.65
+            });
+
+            circle.bindPopup(`
+                <div style="font-size:14px; line-height:1.4;">
+                    <strong style="color:#d84315;">${name}</strong><br>
+                    <strong>Anzahl:</strong> ${count}
+                </div>
+            `);
+
+            circle.addTo(map);
+        });
+
+        // 6. Legende unten rechts einblenden
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = '<strong>Anzahl (Count)</strong><br><br>';
+            const grades = [1, 5, 10, 27];
+            
+            for (let i = 0; i < grades.length; i++) {
+                const count = grades[i];
+                const radius = getRadius(count);
+                const size = radius * 2;
+                div.innerHTML += `
+                    <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                        <span class="legend-circle" style="width: ${size}px; height: ${size}px;"></span>
+                        <span>${count}</span>
+                    </div>
+                `;
+            }
+            return div;
+        };
+        legend.addTo(map);
+    </script>
+
+</body>
+</html>
