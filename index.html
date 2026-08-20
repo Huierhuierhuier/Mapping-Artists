@@ -50,7 +50,16 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-
+        /* Styling für die Fußnote */
+        .footnote-box {
+            margin-top: 8px;
+            font-size: 10px;
+            color: #555;
+            font-style: italic;
+            border-top: 1px solid #ddd;
+            padding-top: 6px;
+            line-height: 1.3;
+        }
         /* Städtenamen ohne Rahmen/Pfeile */
         .city-label {
             background: transparent !important;
@@ -127,14 +136,69 @@
             .catch(err => console.log("GeoJSON Notice:", err));
 
         // Dynamische Farbcodierung
+        // Dynamische Farbcodierung für beide Jahre
         function getColor(count) {
-            return count >= 27 ? '#800026' :
-                   count >= 6  ? '#e31a1c' :
-                   count >= 4  ? '#fc4e2a' :
-                   count == 3  ? '#fd8d3c' :
-                   count == 2  ? '#feb24c' :
-                                 '#ffdda1';
+            return count >= 27 ? '#800026' :  // Dunkelrot
+                   count >= 15 ? '#bd0026' :  // Rot-Violett
+                   count >= 6  ? '#e31a1c' :  // Rot
+                   count >= 4  ? '#fc4e2a' :  // Orange-Rot
+                   count == 3  ? '#fd8d3c' :  // Orange
+                   count == 2  ? '#feb24c' :  // Hellorange
+                                 '#ffdda1';   // Gelb (1)
         }
+        
+        // Funktion zum Aktualisieren von Legende und Fußnote je nach Jahr
+        function updateLegendAndFootnote(yearName) {
+            var legendDiv = document.getElementById('dynamic-legend');
+            if (!legendDiv) return;
+        
+            var content = '<strong>Anzahl Artist:innen</strong><br>';
+        
+            if (yearName === "Januar 1914") {
+                // Legenden-Werte angepasst an die Daten von 1914
+                var grades = [1, 2, 3, 4, 6, 15, 27];
+                var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '27'];
+        
+                for (var i = 0; i < grades.length; i++) {
+                    content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
+                }
+        
+                // Fußnote NUR für 1914 anhängen
+                content += '<div class="footnote-box">1914 waren die Artist:innen im Organ überwiegend in kyrillischer Schrift aufgeführt.</div>';
+        
+            } else {
+                // Legende für Dezember 1910
+                var grades = [1, 2, 3, 4, 6, 27];
+                var labels = ['1', '2', '3', '4–5', '6–7', '27'];
+        
+                for (var i = 0; i < grades.length; i++) {
+                    content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
+                }
+            }
+        
+            legendDiv.innerHTML = content;
+        }
+        
+        // Legenden-Control erstellen
+        var legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function () {
+            var div = L.DomUtil.create('div', 'info legend');
+            div.id = 'dynamic-legend';
+            return div;
+        };
+        legend.addTo(map);
+        
+        // Inital die 1910er Legende laden
+        updateLegendAndFootnote("Dezember 1910");
+        
+        // Beim Umschalten der Karten-Ebene Titel, Legende und Fußnote automatisch anpassen
+        map.on('baselayerchange', function(e) {
+            var subtitle = document.getElementById('subtitle');
+            if (subtitle) {
+                subtitle.innerText = e.name;
+            }
+            updateLegendAndFootnote(e.name);
+        });
 
         function getRadius(count) {
             return Math.max(5, Math.sqrt(count) * 3.5);
