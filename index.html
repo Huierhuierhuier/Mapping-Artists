@@ -121,15 +121,15 @@
             .catch(err => console.log("GeoJSON Notice:", err));
 
         // Dynamische Farbcodierung je nach Anzahl
+        // Dynamische Farbcodierung angepasst an die konkreten Werte
         function getColor(count) {
-            return count > 20 ? '#800026' :
-                   count > 10 ? '#bd0026' :
-                   count > 5  ? '#e31a1c' :
-                   count > 2  ? '#fc4e2a' :
-                   count > 1  ? '#fd8d3c' :
-                                '#feb24c';
+            return count >= 27 ? '#800026' :  // Dunkelrot (27)
+                   count >= 6  ? '#e31a1c' :  // Rot (6–7)
+                   count >= 4  ? '#fc4e2a' :  // Orange-Rot (4–5)
+                   count == 3  ? '#fd8d3c' :  // Orange (3)
+                   count == 2  ? '#feb24c' :  // Hellorange (2)
+                                 '#ffdda1';   // Gelb (1)
         }
-
         function getRadius(count) {
             return Math.max(5, Math.sqrt(count) * 3.5);
         }
@@ -197,16 +197,16 @@
             }
         });
 
-        // 5. Farblegende unten rechts
-       // 5. Farblegende unten rechts
+      // 5. Farblegende unten rechts (nur existierende Datenwerte)
         var legend = L.control({ position: 'bottomright' });
         legend.onAdd = function () {
             var div = L.DomUtil.create('div', 'info legend');
             div.innerHTML = '<strong>Anzahl Artist:innen</strong><br>';
-            var grades = [1, 2, 3, 6, 11, 21];
             
-            // Hier ist '27' (die Maximalzahl) explizit im Text enthalten:
-            var labels = ['1', '2', '3–5', '6–10', '11–20', '21–27'];
+            // Repräsentative Werte für die Farbübergabe
+            var grades = [1, 2, 3, 4, 6, 27];
+            // Exakte Beschriftung deiner Daten
+            var labels = ['1', '2', '3', '4–5', '6–7', '27'];
         
             for (var i = 0; i < grades.length; i++) {
                 div.innerHTML +=
