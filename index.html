@@ -126,28 +126,42 @@
         // 1. Karte initialisieren
         var map = L.map('map').setView([52.0, 25.0], 5);
 
+        // Panes für z-index Ebenensteuerung erstellen (Agenturen immer über Artisten)
+        map.createPane('artistsPane');
+        map.getPane('artistsPane').style.zIndex = 400;
+
+        map.createPane('agenciesPane');
+        map.getPane('agenciesPane').style.zIndex = 450; // Höher als Artisten
+
         // 2. Basiskarte ohne Beschriftung
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap &copy; CARTO'
         }).addTo(map);
 
-        // 3. GeoJSON 1910 laden
-        fetch('./Weltkarte_1910.geojson')
-            .then(res => res.ok ? res.json() : null)
-            .then(geojsonData => {
-                if (geojsonData) {
-                    L.geoJSON(geojsonData, {
-                        style: {
-                            color: "#777",
-                            weight: 1,
-                            fillColor: "#bbb",
-                            fillOpacity: 0.25
-                        }
-                    }).addTo(map);
-                }
-            })
-            .catch(err => console.log("GeoJSON Notice:", err));
+        // GeoJSON-Layer dynamisch verwalten
+        var geojsonLayer = null;
+
+        function loadGeoJson(url) {
+            if (geojsonLayer) {
+                map.removeLayer(geojsonLayer);
+            }
+            fetch(url)
+                .then(res => res.ok ? res.json() : null)
+                .then(geojsonData => {
+                    if (geojsonData) {
+                        geojsonLayer = L.geoJSON(geojsonData, {
+                            style: {
+                                color: "#777",
+                                weight: 1,
+                                fillColor: "#bbb",
+                                fillOpacity: 0.25
+                            }
+                        }).addTo(map);
+                    }
+                })
+                .catch(err => console.log("GeoJSON Notice:", err));
+        }
 
         // Dynamische Farbcodierung für Artist:innen
         function getColor(count) {
@@ -186,7 +200,7 @@
         var layerAgenturen1910 = L.layerGroup();
         var layerAgenturen1914 = L.layerGroup();
 
-        // Generische Funktion zum Laden von Artist:innen CSVs
+        // Generische Funktion zum Laden von Artist:innen CSVs (artistsPane)
         function loadCsvLayer(url, targetLayer) {
             Papa.parse(url, {
                 download: true,
@@ -201,6 +215,7 @@
 
                         if (!isNaN(lat) && !isNaN(lng)) {
                             var circle = L.circleMarker([lat, lng], {
+                                pane: 'artistsPane',
                                 radius: getRadius(count),
                                 fillColor: getColor(count),
                                 color: "#800026",
@@ -239,7 +254,7 @@
             });
         }
 
-        // Generische Funktion zum Laden von Agenturen CSVs
+        // Generische Funktion zum Laden von Agenturen CSVs (agenciesPane - höherer Z-Index)
         function loadAgencyCsvLayer(url, targetLayer) {
             Papa.parse(url, {
                 download: true,
@@ -254,6 +269,7 @@
 
                         if (!isNaN(lat) && !isNaN(lng)) {
                             var circle = L.circleMarker([lat, lng], {
+                                pane: 'agenciesPane',
                                 radius: getRadius(count),
                                 fillColor: getAgencyColor(count),
                                 color: "#051e42",
@@ -285,7 +301,8 @@
         loadAgencyCsvLayer('./Organ-ag-1910-2', layerAgenturen1910);
         loadAgencyCsvLayer('./Organ-ag-1914-1', layerAgenturen1914);
 
-        // Standardmäßig 1910 anzeigen
+        // Standardmäßig 1910 anzeigen und GeoJSON 1910 laden
+        loadGeoJson('./Weltkarte_1910.geojson');
         layer1910.addTo(map);
         layerAgenturen1910.addTo(map);
 
@@ -321,10 +338,10 @@
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
 
-                // Agenturen 1914
+                // Agenturen 1914 (korrigiert: max 4 Agenturen pro Stadt)
                 content += '<div class="legend-section">Künstler-Agenturen (1914)</div>';
-                var agGrades = [1, 2, 5];
-                var agLabels = ['1', '2–4', '5+'];
+                var agGrades = [1, 2];
+                var agLabels = ['1', '2–4'];
 
                 for (var j = 0; j < agGrades.length; j++) {
                     content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
@@ -341,7 +358,7 @@
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
 
-                // Agenturen 1910
+                // Agenturen 1910 (mit Klasse bis 5 für Berlin)
                 content += '<div class="legend-section">Künstler-Agenturen (1910)</div>';
                 var agGrades = [1, 2, 5];
                 var agLabels = ['1', '2–3', '5 (Berlin)'];
@@ -364,11 +381,15 @@
             if (layerKey === "Dezember 1910") {
                 if (subtitle) subtitle.innerText = "Nr. 23, 1. Dezember 1910";
                 
+                loadGeoJson('./Weltkarte_1910.geojson');
+
                 if (map.hasLayer(layerAgenturen1914)) map.removeLayer(layerAgenturen1914);
                 if (!map.hasLayer(layerAgenturen1910)) map.addLayer(layerAgenturen1910);
             } else if (layerKey === "Januar 1914") {
                 if (subtitle) subtitle.innerText = "Nr. 104, 11. Januar 1914";
                 
+                loadGeoJson('./Weltkarte_1914.geojson');
+
                 if (map.hasLayer(layerAgenturen1910)) map.removeLayer(layerAgenturen1910);
                 if (!map.hasLayer(layerAgenturen1914)) map.addLayer(layerAgenturen1914);
             }
