@@ -13,6 +13,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
+        .city-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-weight: bold;
+    font-size: 11px;
+    color: #222;
+    text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff; /* Weisse Kontur fuer bessere Lesbarkeit */
+        }
+        CSS
+        
+        .title-box {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px 12px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
         html, body {
             margin: 0;
             padding: 0;
@@ -82,7 +99,16 @@
         function getRadius(count) {
             return Math.max(5, Math.sqrt(count) * 3.5);
         }
-
+        
+        // Titel-Box oben links
+        var mapTitle = L.control({ position: 'topleft' });
+        mapTitle.onAdd = function() {
+            var div = L.DomUtil.create('div', 'info title-box');
+            div.innerHTML = '<h3 style="margin:0; font-size: 14px; font-weight: bold; font-family: sans-serif;">Aufenthaltsorte der im "Organ" geführten Artist:innen, Dezember 1910</h3>';
+            return div;
+        };
+        mapTitle.addTo(map);
+        
         // 4. Fetch and parse organ-1910-2
         Papa.parse('./organ-1910-2', {
             download: true,
@@ -107,7 +133,15 @@
 
                         circle.bindPopup("<b>" + cityName + "</b><br>Anzahl: " + count);
                         circle.addTo(map);
+                         // Städtename direkt neben dem Punkt anzeigen
+                    circle.bindTooltip(cityName, {
+                        permanent: true,
+                        direction: 'right',
+                        className: 'city-label',
+                        offset: [5, 0]
+                    });
                     }
+                   
                 });
             },
             error: function(err) {
