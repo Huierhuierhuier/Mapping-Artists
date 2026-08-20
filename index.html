@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
-    <!-- PapaParse zum Laden der CSV-Datei -->
+    <!-- PapaParse to parse organ-1910-2.csv -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
@@ -18,11 +18,12 @@
             padding: 0;
             width: 100%;
             height: 100%;
+            overflow: hidden;
         }
         #map {
             width: 100vw;
             height: 100vh;
-            background-color: #2b2b2b;
+            background-color: #d4dedd;
         }
         .info.legend {
             background: rgba(255, 255, 255, 0.9);
@@ -32,11 +33,12 @@
             line-height: 18px;
             font-size: 12px;
             color: #333;
+            font-family: sans-serif;
         }
         .legend-circle {
             border-radius: 50%;
             display: inline-block;
-            background: rgba(255, 87, 34, 0.6);
+            background: rgba(255, 87, 34, 0.65);
             border: 1px solid #d84315;
             margin-right: 6px;
             vertical-align: middle;
@@ -48,41 +50,48 @@
     <div id="map"></div>
 
     <script>
-        // 1. Karte initialisieren
+        // 1. Initialize Map
         var map = L.map('map').setView([52.0, 25.0], 5);
 
-        // 2. Basiskarte (CartoDB Light)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        // 2. Base map with NO labels
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
         }).addTo(map);
 
-        // Radius-Berechnung für Kreise
+        // 3. Load 1910 GeoJSON borders (if present)
+        fetch('./Weltkarte_1910.geojson')
+            .then(function(res) {
+                if (!res.ok) throw new Error("GeoJSON not found");
+                return res.json();
+            })
+            .then(function(geojsonData) {
+                L.geoJSON(geojsonData, {
+                    style: {
+                        color: "#777",
+                        weight: 1,
+                        fillColor: "#bbb",
+                        fillOpacity: 0.25
+                    }
+                }).addTo(map);
+            })
+            .catch(function(err) {
+                console.log("GeoJSON Notice:", err);
+            });
+
         function getRadius(count) {
             return Math.max(5, Math.sqrt(count) * 3.5);
         }
 
-        // 3. Optional: Historische GeoJSON laden (falls vorhanden)
-        fetch('Weltkarte_1910.geojson')
-            .then(res => res.ok ? res.json() : null)
-            .then(geojsonData => {
-                if (geojsonData) {
-                    L.geoJSON(geojsonData, {
-                        style: { color: "#555", weight: 1, fillColor: "#ccc", fillOpacity: 0.3 }
-                    }).addTo(map);
-                }
-            })
-            .catch(err => console.log("Keine GeoJSON geladen."));
-
-        // 4. CSV-Datei automatisiert einlesen
-        Papa.parse('organ-1910-2', {
+        // 4. Fetch and parse organ-1910-2.csv
+        Papa.parse('./organ-1910-2.csv', {
             download: true,
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
                 results.data.forEach(function(row) {
                     var cityName = row.city;
-                    var count = parseInt(row.count);
+                    var count = parseInt(row.count, 10);
                     var lat = parseFloat(row.lat);
                     var lng = parseFloat(row.lng);
 
@@ -100,10 +109,13 @@
                         circle.addTo(map);
                     }
                 });
+            },
+            error: function(err) {
+                console.error("CSV loading error:", err);
             }
         });
 
-        // 5. Legende
+        // 5. Legend
         var legend = L.control({ position: 'bottomright' });
         legend.onAdd = function () {
             var div = L.DomUtil.create('div', 'info legend');
@@ -116,5 +128,6 @@
         };
         legend.addTo(map);
     </script>
+
 </body>
 </html>
