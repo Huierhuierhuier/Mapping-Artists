@@ -87,7 +87,7 @@
             vertical-align: middle;
             border: 1px solid rgba(0,0,0,0.2);
         }
-        /* Styling für Überschriften in der Legende */
+
         .legend-section {
             font-weight: bold;
             margin-top: 8px;
@@ -99,7 +99,6 @@
             margin-top: 0;
         }
 
-        /* Fußnote in der Legende (mit schmalerem Umbruch) */
         .footnote-box {
             margin-top: 8px;
             font-size: 10px;
@@ -112,7 +111,6 @@
             word-wrap: break-word;
         }
 
-        /* Anpassung für den Ebenenschalter oben rechts */
         .leaflet-control-layers {
             font-size: 13px;
             font-weight: bold;
@@ -185,7 +183,8 @@
         // Layer-Gruppen
         var layer1910 = L.layerGroup();
         var layer1914 = L.layerGroup();
-        var layerAgenturen = L.layerGroup();
+        var layerAgenturen1910 = L.layerGroup();
+        var layerAgenturen1914 = L.layerGroup();
 
         // Generische Funktion zum Laden von Artist:innen CSVs
         function loadCsvLayer(url, targetLayer) {
@@ -240,50 +239,55 @@
             });
         }
 
-        // Artist:innen CSV-Dateien laden
+        // Generische Funktion zum Laden von Agenturen CSVs
+        function loadAgencyCsvLayer(url, targetLayer) {
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    results.data.forEach(function(row) {
+                        var cityName = row.city;
+                        var count = parseInt(row.count, 10);
+                        var lat = parseFloat(row.lat);
+                        var lng = parseFloat(row.lng);
+
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            var circle = L.circleMarker([lat, lng], {
+                                radius: getRadius(count),
+                                fillColor: getAgencyColor(count),
+                                color: "#051e42",
+                                weight: 1,
+                                opacity: 0.9,
+                                fillOpacity: 0.8
+                            });
+
+                            circle.bindPopup("<b>" + cityName + "</b><br>Künstler-Agenturen: " + count);
+
+                            circle.bindTooltip(cityName, {
+                                permanent: true,
+                                direction: 'right',
+                                className: 'city-label',
+                                offset: [6, 0]
+                            });
+
+                            circle.addTo(targetLayer);
+                        }
+                    });
+                }
+            });
+        }
+
+        // CSV-Dateien laden
         loadCsvLayer('./organ-1910-2', layer1910);
         loadCsvLayer('./organ-1914-1.csv', layer1914);
 
-        // Agenturen CSV laden
-        Papa.parse('./Organ-ag-1910-2', {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                results.data.forEach(function(row) {
-                    var cityName = row.city;
-                    var count = parseInt(row.count, 10);
-                    var lat = parseFloat(row.lat);
-                    var lng = parseFloat(row.lng);
+        loadAgencyCsvLayer('./Organ-ag-1910-2', layerAgenturen1910);
+        loadAgencyCsvLayer('./Organ-ag-1914-1', layerAgenturen1914);
 
-                    if (!isNaN(lat) && !isNaN(lng)) {
-                        var circle = L.circleMarker([lat, lng], {
-                            radius: getRadius(count),
-                            fillColor: getAgencyColor(count),
-                            color: "#051e42",
-                            weight: 1,
-                            opacity: 0.9,
-                            fillOpacity: 0.8
-                        });
-
-                        circle.bindPopup("<b>" + cityName + "</b><br>Künstler-Agenturen: " + count);
-
-                        circle.bindTooltip(cityName, {
-                            permanent: true,
-                            direction: 'right',
-                            className: 'city-label',
-                            offset: [6, 0]
-                        });
-
-                        circle.addTo(layerAgenturen);
-                    }
-                });
-            }
-        });
-
-        // Standardmäßig 1910 und Agenturen anzeigen
+        // Standardmäßig 1910 anzeigen
         layer1910.addTo(map);
-        layerAgenturen.addTo(map);
+        layerAgenturen1910.addTo(map);
 
         // Umschalter oben rechts
         var baseMaps = {
@@ -292,7 +296,7 @@
         };
         L.control.layers(baseMaps, null, { collapsed: false, position: 'topright' }).addTo(map);
 
-        // Legende unten rechts anlegen
+        // Legende unten rechts
         var legend = L.control({ position: 'bottomright' });
         legend.onAdd = function () {
             var div = L.DomUtil.create('div', 'info legend');
@@ -311,26 +315,36 @@
             if (yearName === "Januar 1914") {
                 content += '<div class="legend-section">Artist:innen (1914)</div>';
                 var grades = [1, 2, 3, 4, 6, 15, 27];
-                var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '28'];
+                var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '27+'];
 
                 for (var i = 0; i < grades.length; i++) {
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
+
+                // Agenturen 1914
+                content += '<div class="legend-section">Künstler-Agenturen (1914)</div>';
+                var agGrades = [1, 2, 5];
+                var agLabels = ['1', '2–3', '5+'];
+
+                for (var j = 0; j < agGrades.length; j++) {
+                    content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
+                }
+
                 content += '<div class="footnote-box">1914 waren die Artist:innen im Organ<br>überwiegend in kyrillischer Schrift aufgeführt.</div>';
             } else {
                 // Artist:innen 1910
                 content += '<div class="legend-section">Artist:innen (Dez. 1910)</div>';
                 var grades = [1, 2, 3, 4, 6, 27];
-                var labels = ['1', '2', '3', '4–5', '6–7', '27'];
+                var labels = ['1', '2', '3', '4–5', '6–7', '27+'];
 
                 for (var i = 0; i < grades.length; i++) {
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
 
-                // Agenturen 1910 (Blautöne)
-                content += '<div class="legend-section">Künstler-Agenturen</div>';
+                // Agenturen 1910
+                content += '<div class="legend-section">Künstler-Agenturen (1910)</div>';
                 var agGrades = [1, 2, 5];
-                var agLabels = ['1', '2–3', '5'];
+                var agLabels = ['1', '2–3', '5 (Berlin)'];
 
                 for (var j = 0; j < agGrades.length; j++) {
                     content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
@@ -340,7 +354,7 @@
             legendDiv.innerHTML = content;
         }
 
-        // Zu Beginn Legende für 1910 laden
+        // Initial Legende laden
         updateLegendAndFootnote("Dezember 1910");
 
         // Synchronisation bei Ebenenwechsel
@@ -350,15 +364,12 @@
                 subtitle.innerText = layerName;
             }
 
-            // Agenturen-Layer nur bei 1910 anzeigen
             if (layerName === "Dezember 1910") {
-                if (!map.hasLayer(layerAgenturen)) {
-                    map.addLayer(layerAgenturen);
-                }
-            } else {
-                if (map.hasLayer(layerAgenturen)) {
-                    map.removeLayer(layerAgenturen);
-                }
+                if (map.hasLayer(layerAgenturen1914)) map.removeLayer(layerAgenturen1914);
+                if (!map.hasLayer(layerAgenturen1910)) map.addLayer(layerAgenturen1910);
+            } else if (layerName === "Januar 1914") {
+                if (map.hasLayer(layerAgenturen1910)) map.removeLayer(layerAgenturen1910);
+                if (!map.hasLayer(layerAgenturen1914)) map.addLayer(layerAgenturen1914);
             }
 
             updateLegendAndFootnote(layerName);
