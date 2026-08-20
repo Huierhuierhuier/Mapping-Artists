@@ -123,50 +123,7 @@
     <div id="map"></div>
 
     <script>
-        // Mapping für Stadt-Namen
-        const cityNormalizeMap = {
-            "Moskwa": "Moskau",
-            "Москва": "Moskau",
-            "Warschau": "Warschau",
-            "Варшава": "Warschau",
-            "Wilna": "Wilna",
-            "Вильна": "Wilna",
-            "Kiew": "Kiew",
-            "Киев": "Kiew",
-            "Lodz": "Łódź",
-            "Лодзь": "Łódź",
-            "Lomza": "Łomża",
-            "Ломжа": "Łomża",
-            "Nocherkassk'": "Nowotscherkassk",
-            "Новочеркасск": "Nowotscherkassk",
-            "Odessa": "Odessa",
-            "Одесса": "Odessa",
-            "Rostov nad Donom": "Rostow am Don",
-            "Ростов-на-Дону": "Rostow am Don",
-            "Samara": "Samara",
-            "Самара": "Samara",
-            "St. Petersburg": "Sankt Petersburg",
-            "Санкт-Петербург": "Sankt Petersburg",
-            "Saratov'": "Saratow",
-            "Саратов": "Saratow",
-            "Slonym (Gub. Grodno)": "Slonim",
-            "Слоним": "Slonim",
-            "Tashkent": "Taschkent",
-            "Ташкент": "Taschkent",
-            "Charkow": "Charkiw",
-            "Харьков": "Charkiw",
-            "Iurev (Tartu)": "Tartu (Jurjew)",
-            "Юрьев": "Tartu (Jurjew)",
-            "Astrachan": "Astrachan",
-            "Астрахань": "Astrachan"
-        };
-
-        function getStandardCityName(rawName) {
-            if (!rawName) return "";
-            var cleanName = rawName.trim();
-            return cityNormalizeMap[cleanName] || cleanName;
-        }
-
+       
         // 1. Karte initialisieren
         var map = L.map('map').setView([52.0, 25.0], 5);
 
