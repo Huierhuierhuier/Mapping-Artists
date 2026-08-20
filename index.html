@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
-    <!-- PapaParse to parse organ-1910-2.csv -->
+    <!-- PapaParse to parse organ-1910-2 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
@@ -83,8 +83,8 @@
             return Math.max(5, Math.sqrt(count) * 3.5);
         }
 
-        // 4. Fetch and parse organ-1910-2.csv
-        Papa.parse('./organ-1910-2.csv', {
+        // 4. Fetch and parse organ-1910-2
+        Papa.parse('./organ-1910-2', {
             download: true,
             header: true,
             skipEmptyLines: true,
