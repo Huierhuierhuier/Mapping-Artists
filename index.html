@@ -311,7 +311,7 @@
             if (yearName === "Januar 1914") {
                 content += '<div class="legend-section">Artist:innen (1914)</div>';
                 var grades = [1, 2, 3, 4, 6, 15, 27];
-                var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '27+'];
+                var labels = ['1', '2', '3', '4–5', '6–14', '15–26', '28'];
 
                 for (var i = 0; i < grades.length; i++) {
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
@@ -321,7 +321,7 @@
                 // Artist:innen 1910
                 content += '<div class="legend-section">Artist:innen (Dez. 1910)</div>';
                 var grades = [1, 2, 3, 4, 6, 27];
-                var labels = ['1', '2', '3', '4–5', '6–7', '27+'];
+                var labels = ['1', '2', '3', '4–5', '6–7', '27'];
 
                 for (var i = 0; i < grades.length; i++) {
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
@@ -330,7 +330,7 @@
                 // Agenturen 1910 (Blautöne)
                 content += '<div class="legend-section">Künstler-Agenturen</div>';
                 var agGrades = [1, 2, 5];
-                var agLabels = ['1', '2–3', '5 (Berlin)'];
+                var agLabels = ['1', '2–3', '5'];
 
                 for (var j = 0; j < agGrades.length; j++) {
                     content += '<i class="legend-color" style="background:' + getAgencyColor(agGrades[j]) + '"></i> ' + agLabels[j] + '<br>';
