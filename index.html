@@ -34,7 +34,7 @@
             border-radius: 6px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.15);
             border: 1px solid #ccc;
-            max-width: 340px;
+            max-width: 360px;
         }
         .title-box h1 {
             margin: 0 0 4px 0;
@@ -123,7 +123,6 @@
     <div id="map"></div>
 
     <script>
-       
         // 1. Karte initialisieren
         var map = L.map('map').setView([52.0, 25.0], 5);
 
@@ -176,7 +175,7 @@
         var mapTitle = L.control({ position: 'topleft' });
         mapTitle.onAdd = function() {
             var div = L.DomUtil.create('div', 'info title-box');
-            div.innerHTML = '<h1>Aufenthaltsorte der im "Organ" geführten Artist:innen</h1><p id="subtitle">Nr. 23, 1. Dezember 1910</p>';
+            div.innerHTML = '<h1>Aufenthaltsorte der Artist:innen und Geschäftsorte der Künstleragenturen in der Zeitschrift "Organ"</h1><p id="subtitle">Nr. 23, 1. Dezember 1910</p>';
             return div;
         };
         mapTitle.addTo(map);
@@ -195,7 +194,7 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     results.data.forEach(function(row) {
-                        var cityName = getStandardCityName(row.city);
+                        var cityName = row.city ? row.city.trim() : "";
                         var count = parseInt(row.count, 10);
                         var lat = parseFloat(row.lat);
                         var lng = parseFloat(row.lng);
@@ -248,7 +247,7 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     results.data.forEach(function(row) {
-                        var cityName = getStandardCityName(row.city);
+                        var cityName = row.city ? row.city.trim() : "";
                         var count = parseInt(row.count, 10);
                         var lat = parseFloat(row.lat);
                         var lng = parseFloat(row.lng);
@@ -322,7 +321,7 @@
                     content += '<i class="legend-color" style="background:' + getColor(grades[i]) + '"></i> ' + labels[i] + '<br>';
                 }
 
-                // Agenturen 1914 (korrigierte Skala)
+                // Agenturen 1914
                 content += '<div class="legend-section">Künstler-Agenturen (1914)</div>';
                 var agGrades = [1, 2, 5];
                 var agLabels = ['1', '2–4', '5+'];
