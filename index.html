@@ -125,26 +125,13 @@
         }).addTo(map);
 
         // ---- NEU: Länder, die aus Weltkarte_1910 / Weltkarte_1914 unterdrückt werden sollen ----
-        var EXCLUDED_COUNTRIES = ["Germany (Prussia)", "Austria", "Russia (Soviet Union)"];
+        // Property-Feld in den Weltkarte-GeoJSONs heißt "country_name"
+        var EXCLUDED_COUNTRIES = ["Germany (Prussia)", "Austria-Hungary", "Russia (Soviet Union)"];
 
-        // Prüft möglichst robust verschiedene gängige Property-Namen auf einen Treffer
-        // (falls euer GeoJSON ein anderes Feld als "name" verwendet, hier ergänzen)
         function isExcludedFeature(feature) {
             if (!feature || !feature.properties) return false;
-            var props = feature.properties;
-            var candidates = [
-                props.name, props.NAME, props.Name,
-                props.name_en, props.NAME_EN,
-                props.admin, props.ADMIN,
-                props.country, props.COUNTRY
-            ];
-            for (var i = 0; i < candidates.length; i++) {
-                var val = candidates[i];
-                if (val && EXCLUDED_COUNTRIES.indexOf(val.toString().trim()) !== -1) {
-                    return true;
-                }
-            }
-            return false;
+            var val = feature.properties.country_name;
+            return !!val && EXCLUDED_COUNTRIES.indexOf(val.toString().trim()) !== -1;
         }
 
         // GeoJSON-Layer dynamisch verwalten
