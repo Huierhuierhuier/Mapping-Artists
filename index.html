@@ -99,18 +99,6 @@
             margin-top: 0;
         }
 
-        .footnote-box {
-            margin-top: 8px;
-            font-size: 10px;
-            color: #555;
-            font-style: italic;
-            border-top: 1px solid #ddd;
-            padding-top: 6px;
-            line-height: 1.35;
-            max-width: 170px;
-            word-wrap: break-word;
-        }
-
         .leaflet-control-layers {
             font-size: 13px;
             font-weight: bold;
@@ -126,12 +114,15 @@
         // 1. Karte initialisieren
         var map = L.map('map').setView([52.0, 25.0], 5);
 
-        // Panes für z-index Ebenensteuerung erstellen (Agenturen immer über Artisten)
+        // Panes für z-index Ebenensteuerung (Hintergrund-Pane für Shapes)
+        map.createPane('backgroundPane');
+        map.getPane('backgroundPane').style.zIndex = 100; // Ganz unten
+
         map.createPane('artistsPane');
         map.getPane('artistsPane').style.zIndex = 400;
 
         map.createPane('agenciesPane');
-        map.getPane('agenciesPane').style.zIndex = 450; // Höher als Artisten
+        map.getPane('agenciesPane').style.zIndex = 450; 
 
         // 2. Basiskarte ohne Beschriftung
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
@@ -139,10 +130,22 @@
             attribution: '&copy; OpenStreetMap &copy; CARTO'
         }).addTo(map);
 
-        // GeoJSON-Layer dynamisch verwalten
+        // Globale Variable für den Haupt-GeoJSON-Layer
         var geojsonLayer = null;
+        
+        // Liste der zu unterdrückenden Ländernamen (muss exakt mit den Properties im GeoJSON übereinstimmen)
+        var excludedCountries = ["Germany (Prussia)", "Austria", "Russia (Soviet Union)"];
+        
+        // Exakter Stil für alle Hintergrund-Shapes (wie im Original)
+        var backgroundStyle = {
+            color: "#777",
+            weight: 1,
+            fillColor: "#bbb",
+            fillOpacity: 0.25
+        };
 
-        function loadGeoJson(url) {
+        // Funktion zum Laden der Haupt-Weltkarte MIT Filter
+        function loadFilteredGeoJson(url) {
             if (geojsonLayer) {
                 map.removeLayer(geojsonLayer);
             }
@@ -151,16 +154,42 @@
                 .then(geojsonData => {
                     if (geojsonData) {
                         geojsonLayer = L.geoJSON(geojsonData, {
-                            style: {
-                                color: "#777",
-                                weight: 1,
-                                fillColor: "#bbb",
-                                fillOpacity: 0.25
+                            pane: 'backgroundPane', // Auf die Hintergrund-Ebene setzen
+                            style: backgroundStyle,
+                            filter: function(feature) {
+                                // Prüft, ob der Ländername in der Ausschlussliste steht
+                                if (feature.properties && feature.properties.name) {
+                                    return !excludedCountries.includes(feature.properties.name);
+                                }
+                                return true; // Anzeigen, wenn kein Name vorhanden ist
                             }
                         }).addTo(map);
                     }
                 })
                 .catch(err => console.log("GeoJSON Notice:", err));
+        }
+
+        // Funktion zum Laden der spezifischen Imperien-Shapes
+        function loadSpecificEmpires() {
+            var empireFiles = [
+                './Russland_1914_perfekt.geojson',
+                './Oesterreich-1908.json',
+                './Deutsches-Kaiserreich_1914.json'
+            ];
+
+            empireFiles.forEach(function(url) {
+                fetch(url)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(geojsonData => {
+                        if (geojsonData) {
+                            L.geoJSON(geojsonData, {
+                                pane: 'backgroundPane', // Auch hier: Hintergrund-Ebene
+                                style: backgroundStyle // Exakt gleicher Stil
+                            }).addTo(map);
+                        }
+                    })
+                    .catch(err => console.log("Empire GeoJSON Notice:", err));
+            });
         }
 
         // Dynamische Farbcodierung für Artist:innen
@@ -181,7 +210,7 @@
                count >= 3 ? '#1d6996' : // Kräftiges Mittelblau (3)
                count >= 2 ? '#38a6a5' : // Strahlendes Cyan-Blau (2)
                count >= 1 ? '#9ecae1' : // Sehr helles Eisblau (1)
-                            '#f7fbff';  // Fast weißer Fallback (0 oder kleiner)
+                           '#f7fbff';  // Fast weißer Fallback (0 oder kleiner)
         }
 
         function getRadius(count) {
@@ -257,7 +286,7 @@
             });
         }
 
-        // Generische Funktion zum Laden von Agenturen CSVs (agenciesPane - höherer Z-Index)
+        // Generische Funktion zum Laden von Agenturen CSVs (agenciesPane)
         function loadAgencyCsvLayer(url, targetLayer) {
             Papa.parse(url, {
                 download: true,
@@ -300,12 +329,18 @@
         // CSV-Dateien laden
         loadCsvLayer('./organ-1910-2', layer1910);
         loadCsvLayer('./organ-1914-1.csv', layer1914);
-
         loadAgencyCsvLayer('./Organ-ag-1910-2', layerAgenturen1910);
         loadAgencyCsvLayer('./Organ-ag-1914-1', layerAgenturen1914);
 
-        // Standardmäßig 1910 anzeigen und GeoJSON 1910 laden
-        loadGeoJson('./Weltkarte_1910.geojson');
+        // --- INITALES LADEN ---
+        
+        // 1. Spezifische Imperien laden (bleiben immer aktiv)
+        loadSpecificEmpires();
+        
+        // 2. Gefilterte Weltkarte für 1910 laden
+        loadFilteredGeoJson('./Weltkarte_1910.geojson');
+        
+        // 3. Daten-Layer für 1910 anzeigen
         layer1910.addTo(map);
         layerAgenturen1910.addTo(map);
 
@@ -333,7 +368,6 @@
             var content = '';
         
             if (selectedKey === "Januar 1914") {
-                // --- LEGENDE FÜR 1914 ---
                 content += '<div class="legend-section">Artist:innen (1914)</div>';
                 var grades1914 = [1, 2, 3, 4, 6, 15, 27];
                 var labels1914 = ['1', '2', '3', '4–5', '6–14', '15–26', '27+'];
@@ -351,7 +385,6 @@
                 }
         
             } else if (selectedKey === "Dezember 1910") {
-                // --- LEGENDE FÜR 1910 ---
                 content += '<div class="legend-section">Artist:innen (Dez. 1910)</div>';
                 var grades1910 = [1, 2, 3, 4, 6, 27];
                 var labels1910 = ['1', '2', '3', '4–5', '6–7', '27+'];
@@ -382,7 +415,8 @@
             if (layerKey === "Dezember 1910") {
                 if (subtitle) subtitle.innerText = "Nr. 23, 1. Dezember 1910";
                 
-                loadGeoJson('./Weltkarte_1910.geojson');
+                // Neue Weltkarte laden (Imperien werden gefiltert)
+                loadFilteredGeoJson('./Weltkarte_1910.geojson');
         
                 if (map.hasLayer(layerAgenturen1914)) map.removeLayer(layerAgenturen1914);
                 if (!map.hasLayer(layerAgenturen1910)) map.addLayer(layerAgenturen1910);
@@ -390,7 +424,8 @@
             } else if (layerKey === "Januar 1914") {
                 if (subtitle) subtitle.innerText = "Nr. 104, 11. Januar 1914";
                 
-                loadGeoJson('./Weltkarte_1914.geojson');
+                // Neue Weltkarte laden (Imperien werden gefiltert)
+                loadFilteredGeoJson('./Weltkarte_1914.geojson');
         
                 if (map.hasLayer(layerAgenturen1910)) map.removeLayer(layerAgenturen1910);
                 if (!map.hasLayer(layerAgenturen1914)) map.addLayer(layerAgenturen1914);
