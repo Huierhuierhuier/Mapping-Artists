@@ -1,7 +1,7 @@
-# Aufenthaltsorte der Artist:innen und Geschäftsorte der Künstleraenturen in der Zeitschrift "Organ" (Warschau)
+# Aufenthaltsorte der Artist:innen und Geschäftsorte der Künstleragenturen in der Zeitschrift "Organ" (Warschau)
 
 Empfohlene Zitation:
-Hoyer, Vincent: Aufenthaltsorte der Artist:innen und Geschäftsorte der Künstleraenturen in der Zeitschrift "Organ". 1910 & 1914, Interaktive Karte. Online unter: https://vhhistory.github.io/Organ-1910-1915/ (abgerufen am DD.MM.YYYY).
+Hoyer, Vincent: Aufenthaltsorte der Artist:innen und Geschäftsorte der Künstleragenturen in der Zeitschrift "Organ". 1910 & 1914, Interaktive Karte. Online unter: https://vhhistory.github.io/Organ-1910-1915/ (abgerufen am DD.MM.YYYY).
 
 Quellen: 
 Organ (Warschau), Nr. 23, 01.12.1910; Nr. 104, 11.01.1914.
